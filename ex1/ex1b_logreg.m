@@ -45,6 +45,10 @@ fprintf('Optimization took %f seconds.\n', toc);
 %theta=minFunc(@logistic_regression_vec, theta, options, train.X, train.y);
 %fprintf('Optimization took %f seconds.\n', toc);
 
+% check gradient computing
+graErrRate = grad_check(@logistic_regression, theta, 100, train.X, train.y);
+fprintf('Gradient computing error rate: %2.1f%%\n', 100*graErrRate);
+
 % Print out training accuracy.
 tic;
 accuracy = binary_classifier_accuracy(theta,train.X,train.y);

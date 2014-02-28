@@ -9,6 +9,10 @@
 %  modify this file.
 
 %%======================================================================
+
+diary on;
+diary('run_log');
+
 %% STEP 0: Initialize Parameters and Load Data
 %  Here we initialize some parameters used for the exercise.
 
@@ -70,14 +74,13 @@ if DEBUG
  
     assert(diff < 1e-9,...
         'Difference too large. Check your gradient computation again');
-    
 end;
 
 %%======================================================================
 %% STEP 3: Learn Parameters
 %  Implement minFuncSGD.m, then train the model.
 
-options.epochs = 3;
+options.epochs = 50;
 options.minibatch = 256;
 options.alpha = 1e-1;
 options.momentum = .95;
@@ -102,3 +105,5 @@ acc = sum(preds==testLabels)/length(preds);
 
 % Accuracy should be around 97.4% after 3 epochs
 fprintf('Accuracy is %f\n',acc);
+
+diary off;

@@ -1,58 +1,46 @@
-% runs training procedure for supervised multilayer network
-% softmax output layer with cross entropy loss function
+function run_train(ei,options,data_train, labels_train, data_test, labels_test, display_str, data_path, figure_path)
+fprintf(['***** ' display_str ' *****\n']); 
+for i = 1 : size(ei,2);
+    fprintf([display_str '_' int2str(i) '\n']);
+    ei(i)
+    options
+    %% setup random initial weights
+    stack = initialize_weights(ei(i));
+    params = stack2params(stack);
+    %% check gradient computing
+    %grad_error_rate = grad_check(@supervised_dnn_cost, params, 20, ei, data_train, labels_train);
+    %fprintf('gradient computing error rate: %f\n',grad_error_rate);
 
-%% setup environment
-% experiment information
-% a struct containing network layer sizes etc
-ei = [];
+    %% run training
+    tic;
+    [opt_params,opt_value,exitflag,output] = minFunc(@supervised_dnn_cost,...
+        params,options,ei(i), data_train, labels_train);
+    time_used = toc;
+    fprintf(output.message);
+    fprintf('\ntime used: %f\n',toc);
 
-% add common directory to your path for
-% minfunc and mnist data helpers
-addpath ../common;
-addpath(genpath('../common/minFunc_2012/minFunc'));
+    %% display training
+    acc_test = zeros(size(output.trace.fval));
+    acc_train = acc_test;
+    iterates = 1 : size(output.trace.fval,1);
+    for iter = iterates
+        [~, ~, pred] = supervised_dnn_cost( output.trace.xs(iter,:)', ei(i), data_test, [], true);
+        [~,pred] = max(pred);
+        acc_test(iter) = mean(pred'==labels_test);
 
-%% load mnist data
-[data_train, labels_train, data_test, labels_test] = load_preprocess_mnist();
+        [~, ~, pred] = supervised_dnn_cost( output.trace.xs(iter,:)', ei(i), data_train, [], true);
+        [~,pred] = max(pred);
+        acc_train(iter) = mean(pred'==labels_train);
+    end
+    fprintf('train accuracy : %f\n', acc_train(end));
+    fprintf('test accuracy : %f\n', acc_test(end));
 
-%% populate ei with the network architecture to train
-% ei is a structure you can use to store hyperparameters of the network
-% the architecture specified below should produce  100% training accuracy
-% You should be able to try different network architectures by changing ei
-% only (no changes to the objective function code)
+    options_display.save.filename = [figure_path '\\' display_str '_' int2str(i)];
+    options_display.save.format = [1 2];
+    display_training(iterates, output.trace.fval, 1 - acc_test, 1 - acc_train, options_display);
 
-% dimension of input features
-ei.input_dim = 784;
-% number of output classes
-ei.output_dim = 10;
-% sizes of all hidden layers and the output layer
-ei.layer_sizes = [256, ei.output_dim];
-% scaling parameter for l2 weight regularization penalty
-ei.lambda = 0;
-% which type of activation function to use in hidden layers
-% feel free to implement support for only the logistic sigmoid function
-ei.activation_fun = 'logistic';
+    filename = [data_path '\\' display_str '_' int2str(i)];
+    save(filename,'ei','options','options_display','output','time_used','opt_params','opt_value','exitflag','acc_train','acc_test','iterates');
 
-%% setup random initial weights
-stack = initialize_weights(ei);
-params = stack2params(stack);
-
-%% setup minfunc options
-options = [];
-options.display = 'iter';
-options.maxFunEvals = 1e6;
-options.Method = 'lbfgs';
-
-%% run training
-[opt_params,opt_value,exitflag,output] = minFunc(@supervised_dnn_cost,...
-    params,options,ei, data_train, labels_train);
-
-%% compute accuracy on the test and train set
-[~, ~, pred] = supervised_dnn_cost( opt_params, ei, data_test, [], true);
-[~,pred] = max(pred);
-acc_test = mean(pred'==labels_test);
-fprintf('test accuracy: %f\n', acc_test);
-
-[~, ~, pred] = supervised_dnn_cost( opt_params, ei, data_train, [], true);
-[~,pred] = max(pred);
-acc_train = mean(pred'==labels_train);
-fprintf('train accuracy: %f\n', acc_train);
+end
+end

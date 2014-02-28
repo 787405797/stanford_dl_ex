@@ -72,6 +72,8 @@ activations = zeros(convDim,convDim,numFilters,numImages);
 activationsPooled = zeros(outputDim,outputDim,numFilters,numImages);
 
 %%% YOUR CODE HERE %%%
+activations = cnnConvolve(filterDim, numFilters, images, Wc, bc);
+activationsPooled = cnnPool(poolDim, activations);
 
 % Reshape activations into 2-d matrix, hiddenSize x numImages,
 % for Softmax layer
@@ -86,8 +88,10 @@ activationsPooled = reshape(activationsPooled,[],numImages);
 % numClasses x numImages for storing probability that each image belongs to
 % each class.
 probs = zeros(numClasses,numImages);
-
 %%% YOUR CODE HERE %%%
+z = Wd * activationsPooled + repmat(bd,1,numImages);
+expZ = exp(z);
+probs = expZ ./ repmat(sum(expZ), size(expZ,1), 1);
 
 %%======================================================================
 %% STEP 1b: Calculate Cost
@@ -98,6 +102,10 @@ probs = zeros(numClasses,numImages);
 cost = 0; % save objective into cost
 
 %%% YOUR CODE HERE %%%
+extY = zeros(numClasses, numImages);
+extY(sub2ind(size(extY), labels', 1:numImages)) = 1;
+cost = - sum(sum(extY .* log(probs))) / numImages;
+
 
 % Makes predictions given probs and returns without backproagating errors.
 if pred
@@ -118,6 +126,24 @@ end;
 %  quickly.
 
 %%% YOUR CODE HERE %%%
+gradZ = probs - extY;
+bd_grad = mean(gradZ, 2);
+Wd_grad = gradZ * activationsPooled' / numImages;
+gradActPool = Wd' * gradZ;
+%gradActPool = gradActPool .* activationsPooled .* (1 - activationsPooled);
+gradActPool = reshape(gradActPool,outputDim, outputDim, numFilters, numImages);
+gradAct = zeros(convDim, convDim, numFilters, numImages);
+gradZc = gradAct;
+Wc_grad_temp = zeros(filterDim, filterDim, numFilters, numImages);
+for i = 1 : numImages
+    for f = 1 : numFilters
+        gradAct(:, :, f, i) = (1/poolDim^2) * kron(gradActPool(:, :, f, i),ones(poolDim));
+        gradZc(:,:,f,i) = gradAct(:,:,f,i) .* activations(:,:,f,i) .* ( 1 - activations(:,:,f,i));
+        Wc_grad_temp(:,:,f,i) = conv2(images(:,:,i),rot90(gradZc(:,:,f,i),2),'valid');
+    end
+end
+bc_grad = sum(sum(mean(gradZc,4)));
+Wc_grad = mean(Wc_grad_temp,4);
 
 %%======================================================================
 %% STEP 1d: Gradient Calculation

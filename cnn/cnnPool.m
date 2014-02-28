@@ -28,7 +28,17 @@ pooledFeatures = zeros(convolvedDim / poolDim, ...
 %   corresponding (poolRow, poolCol) pooling region. 
 %   
 %   Use mean pooling here.
+poolFilter = ones(poolDim) * 1/poolDim/poolDim;
 
+for imageNum = 1:numImages
+    for filterNum = 1:numFilters
+	features = convolvedFeatures(:,:,filterNum,imageNum);
+	poolConvolvedFeatures = conv2(features,poolFilter,'valid');
+	pooledFeatures(:,:,filterNum,imageNum) = poolConvolvedFeatures(1:poolDim:end,1:poolDim:end);
+    end
+end
+
+% pooledFeatures = sigmoid(pooledFeatures);  
 %%% YOUR CODE HERE %%%
 
 end

@@ -210,6 +210,7 @@ function [x,f,exitflag,output] = minFunc(funObj,x0,options,varargin)
 %   message - exit message
 %   trace.funccount - function evaluations after each iteration
 %   trace.fval - function value after each iteration
+%   trace.xs - the new xs after each iteration
 %
 % Author: Mark Schmidt (2005)
 % Web: http://www.di.ens.fr/~mschmidt/Software/minFunc.html
@@ -344,6 +345,7 @@ if nargout > 3
 	trace.fval = f;
 	trace.funcCount = funEvals;
 	trace.optCond = optCond;
+    trace.xs = x0';
 end
 
 % Exit if initial point is optimal
@@ -1103,6 +1105,7 @@ for i = 1:maxIter
     trace.fval(end+1,1) = f;
     trace.funcCount(end+1,1) = funEvals;
 	trace.optCond(end+1,1) = optCond;
+    trace.xs(end+1,:) = x';
 	end
 
 	% Output Function

@@ -28,5 +28,16 @@ function [f,g] = softmax_regression(theta, X,y)
   %
 %%% YOUR CODE HERE %%%
   
+  act = exp(theta' * X);
+  act = [act; ones(1,m)];
+  sumAct = sum(act);
+  p = act ./ repmat(sumAct,size(act,1),1);
+  ind = sub2ind(size(p),y,1:size(p,2));
+  f = -sum(log(p(ind)));
+  
+  extY = zeros(num_classes,m);
+  extY(ind) = 1;
+  extG = X * (extY - p)';
+  g = -extG(:,1:end-1);
   g=g(:); % make gradient a vector for minFunc
 
